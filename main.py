@@ -1,3 +1,3 @@
 import pygame
 
-print "If you can see this, then PyGame was succesfully imported"
+print ("If you can see this, then PyGame was succesfully imported")
