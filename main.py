@@ -9,6 +9,33 @@ lives = 3
 time = 0.5
 started = False
 
+# Image class that helps working with images
+class ImageInfo:
+    def __init__(self, center, size, radius = 0, lifespan = None, animated = False):
+        self.center = center
+        self.size = size
+        self.radius = radius
+        if lifespan:
+            self.lifespan = lifespan
+        else:
+            self.lifespan = float('inf')
+        self.animated = animated
+
+    def get_center(self):
+        return self.center
+
+    def get_size(self):
+        return self.size
+
+    def get_radius(self):
+        return self.radius
+
+    def get_lifespan(self):
+        return self.lifespan
+
+    def get_animated(self):
+        return self.animated
+
 # helper function for loading images
 # define the current path
 main_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -26,18 +53,109 @@ def load_sound(file):
     sound = pygame.mixer.Sound(file)
     return sound
 
+# helper functions for transformation, leave for now, we'll see if they're needed
+def angle_to_vector(ang):
+    return [math.cos(ang), math.sin(ang)]
 
+def dist(p,q):
+    return math.sqrt((p[0] - q[0]) ** 2+(p[1] - q[1]) ** 2)
+	
+# Ship class
+
+class Ship:
+	def __init__(self, pos, vel, angle, image, info):
+		self.pos = [pos[0],pos[1]]
+		self.vel = [vel[0],vel[1]]
+		self.thrust = False
+		self.angle = angle
+		self.angle_vel = 0
+		self.image = image
+		self.image_center = info.get_center()
+		self.image_size = info.get_size()
+		self.radius = info.get_radius()
+        
+	def get_position(self):
+		return self.pos
+    
+	def get_radius(self):
+		return self.radius
+    
+	def turn(self, direction):
+		self.angle_vel = direction
+        
+	def move(self, thrust):
+		self.thrust = thrust
+        #if self.thrust:
+        #    ship_thrust_sound.play()
+        #else:
+        #    ship_thrust_sound.rewind()
+			
+	def shoot(self):
+		pass
+        #global missle_group       
+        #base_missle_speed = 6
+        #forward = angle_to_vector(self.angle)
+        #vel = [0, 0]
+        #vel[0] = self.vel[0] + forward[0] * base_missle_speed
+        #vel[1] = self.vel[1] + forward[1] * base_missle_speed
+
+        #pos = [0, 0]
+        #pos[0] = self.pos[0] + (self.radius * forward[0])
+        #pos[1] = self.pos[1] + (self.radius * forward[1])
+        #a_missile = Sprite(pos, vel, 0, 0, missile_image, missile_info, missile_sound)
+        #missle_group.add(a_missile)
+        
+	def draw(self,screen):
+		screen.blit(self.image, self.pos)
+		pass
+        #if self.thrust:
+        #    canvas.draw_image(self.image, [self.image_center[0] + 90, self.image_center[1]] , self.image_size, self.pos, self.image_size, self.angle)
+        #else:
+        #    canvas.draw_image(self.image, self.image_center, self.image_size, self.pos, self.image_size, self.angle)
+	def update(self):
+		pass
+        #self.pos[0] += self.vel[0]
+        #self.pos[1] += self.vel[1]
+        
+        # Friction update
+        #c = 0.015
+        #self.vel[0] *= (1 - c)
+        #self.vel[1] *= (1 - c)
+        
+        # Screen wrapping
+           
+        #if self.pos[1] <= self.radius or self.pos[1] >= HEIGHT:
+        #    self.pos[1] = self.pos[1] % HEIGHT
+                      
+        #if self.pos[0] <= 0 or self.pos[0] >= WIDTH:
+        #    self.pos[0] = self.pos[0] % WIDTH
+            
+        # Thrusting forward      
+        #forward = angle_to_vector(self.angle)
+        #if self.thrust:
+        #    self.vel[0] += forward[0] * 0.1
+        #    self.vel[1] += forward[1] * 0.1
+        #self.angle += self.angle_vel
+		
 def main():
-	# Init everything
+	# Init pygame
 	pygame.init()
 	screen = pygame.display.set_mode((WIDTH, HEIGHT))
 	pygame.display.set_caption('Rice Rocks')
 	
+	# Load the graphics
+	ship_info = ImageInfo([45, 45], [90, 90], 35)
+	ship_sheet = spritesheet.spritesheet('art/double_ship.png')
+	ship_images = ship_sheet.image_at((0, 0, 90, 90))
+	#ship_images = load_image('double_ship.png')
 	# Load the sounds
 	soundtrack = load_sound('music.ogg')
 	missile_sound = load_sound('shoot.wav')
 	ship_thrust_sound = load_sound('thrust.wav')
 	explosion_sound = load_sound('explode.wav')
+	
+	# Init the ship and other objects
+	my_ship = Ship([WIDTH / 2, HEIGHT / 2], [0, 0], 0, ship_images, ship_info)
 	
 	# Draw the background
 	background = load_image('nebula_blue.f2014.png')
@@ -50,9 +168,12 @@ def main():
 	# Game loop
 	while 1:
 		clock.tick(60)
+		# Event listener
 		for event in pygame.event.get():
 			if event.type == QUIT:
 				return
+		# Draw everything
+		my_ship.draw(screen)
 		pygame.display.flip()
 print ("If you can see this, then PyGame was succesfully imported")
 
