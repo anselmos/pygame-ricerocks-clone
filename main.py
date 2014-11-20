@@ -69,7 +69,7 @@ class Ship:
 		self.thrust = False
 		self.angle = angle
 		self.angle_vel = 0
-		self.image = image
+		self.image = image[0]
 		self.image_center = info.get_center()
 		self.image_size = info.get_size()
 		self.radius = info.get_radius()
@@ -113,22 +113,21 @@ class Ship:
         #else:
         #    canvas.draw_image(self.image, self.image_center, self.image_size, self.pos, self.image_size, self.angle)
 	def update(self):
-		pass
-        #self.pos[0] += self.vel[0]
-        #self.pos[1] += self.vel[1]
-        
-        # Friction update
-        #c = 0.015
-        #self.vel[0] *= (1 - c)
-        #self.vel[1] *= (1 - c)
+		self.pos[0] += self.vel[0]
+		self.pos[1] += self.vel[1]
+		
+		# Friction update
+		c = 0.015
+		self.vel[0] *= (1 - c)
+		self.vel[1] *= (1 - c)
         
         # Screen wrapping
            
-        #if self.pos[1] <= self.radius or self.pos[1] >= HEIGHT:
-        #    self.pos[1] = self.pos[1] % HEIGHT
-                      
-        #if self.pos[0] <= 0 or self.pos[0] >= WIDTH:
-        #    self.pos[0] = self.pos[0] % WIDTH
+		if self.pos[1] <= self.radius or self.pos[1] >= HEIGHT:
+			self.pos[1] = self.pos[1] % HEIGHT
+                  
+		if self.pos[0] <= 0 or self.pos[0] >= WIDTH:
+			self.pos[0] = self.pos[0] % WIDTH
             
         # Thrusting forward      
         #forward = angle_to_vector(self.angle)
@@ -136,7 +135,11 @@ class Ship:
         #    self.vel[0] += forward[0] * 0.1
         #    self.vel[1] += forward[1] * 0.1
         #self.angle += self.angle_vel
-		
+def draw(screen):
+	global my_ship
+	screen.fill((0, 0, 0))
+	my_ship.draw(screen)
+	pygame.display.flip()
 def main():
 	# Init pygame
 	pygame.init()
@@ -146,8 +149,8 @@ def main():
 	# Load the graphics
 	ship_info = ImageInfo([45, 45], [90, 90], 35)
 	ship_sheet = spritesheet.spritesheet('art/double_ship.png')
-	ship_images = ship_sheet.image_at((0, 0, 90, 90))
-	#ship_images = load_image('double_ship.png')
+	ship_images = ship_sheet.images_at(((0, 0, 90, 90),(90, 0, 90,90)), colorkey=(255, 255, 255))
+	#ship_images = load_image('double_ship2.png')
 	# Load the sounds
 	soundtrack = load_sound('music.ogg')
 	missile_sound = load_sound('shoot.wav')
@@ -155,11 +158,11 @@ def main():
 	explosion_sound = load_sound('explode.wav')
 	
 	# Init the ship and other objects
-	my_ship = Ship([WIDTH / 2, HEIGHT / 2], [0, 0], 0, ship_images, ship_info)
+	my_ship = Ship([WIDTH / 2, HEIGHT / 2], [10, 0], 0, ship_images, ship_info)
 	
 	# Draw the background
 	background = load_image('nebula_blue.f2014.png')
-	screen.blit(background, (0,0))
+	#screen.blit(background, (0,0))
 	pygame.display.flip()
 	
 	# Init game objects
@@ -172,9 +175,15 @@ def main():
 		for event in pygame.event.get():
 			if event.type == QUIT:
 				return
+		# Update everything
+		my_ship.update()
+		
 		# Draw everything
+		#screen.fill((0, 0, 0))
+		screen.blit(background, (0,0))
 		my_ship.draw(screen)
 		pygame.display.flip()
+		#draw(screen)
 print ("If you can see this, then PyGame was succesfully imported")
 
 
