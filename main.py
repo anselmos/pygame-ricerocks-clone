@@ -1,4 +1,4 @@
-import pygame, spritesheet, os.path
+import pygame, spritesheet, os.path, math
 from pygame.locals import *
 
 # globals for user interface
@@ -60,6 +60,15 @@ def angle_to_vector(ang):
 def dist(p,q):
     return math.sqrt((p[0] - q[0]) ** 2+(p[1] - q[1]) ** 2)
 	
+def rot_center(image, angle):
+	"""rotate an image while keeping its center and size"""
+	orig_rect = image.get_rect()
+	rot_image = pygame.transform.rotate(image, angle)
+	rot_rect = orig_rect.copy()
+	rot_rect.center = rot_image.get_rect().center
+	rot_image = rot_image.subsurface(rot_rect).copy()
+	return rot_image
+
 # Ship class
 
 class Ship:
@@ -70,9 +79,11 @@ class Ship:
 		self.angle = angle
 		self.angle_vel = 0
 		self.image = image[0]
+		self.original = self.image
 		self.image_center = info.get_center()
 		self.image_size = info.get_size()
 		self.radius = info.get_radius()
+		self.rect = self.image.get_rect()
         
 	def get_position(self):
 		return self.pos
@@ -130,11 +141,14 @@ class Ship:
 			self.pos[0] = self.pos[0] % WIDTH
             
         # Thrusting forward      
-        #forward = angle_to_vector(self.angle)
-        #if self.thrust:
-        #    self.vel[0] += forward[0] * 0.1
-        #    self.vel[1] += forward[1] * 0.1
-        #self.angle += self.angle_vel
+		forward = angle_to_vector(math.radians(self.angle))
+		if self.thrust:
+			self.vel[0] += forward[0] * 0.1
+			self.vel[1] += forward[1] * 0.1
+			print (math.radians(self.angle))
+		self.angle += self.angle_vel
+		self.image = rot_center(self.original, self.angle)
+		#self.rect = self.image.get_rect()
 def draw(screen):
 	global my_ship
 	screen.fill((0, 0, 0))
@@ -158,7 +172,7 @@ def main():
 	explosion_sound = load_sound('explode.wav')
 	
 	# Init the ship and other objects
-	my_ship = Ship([WIDTH / 2, HEIGHT / 2], [10, 0], 0, ship_images, ship_info)
+	my_ship = Ship([WIDTH / 2, HEIGHT / 2], [0, 0], 0, ship_images, ship_info)
 	
 	# Draw the background
 	background = load_image('nebula_blue.f2014.png')
@@ -175,6 +189,19 @@ def main():
 		for event in pygame.event.get():
 			if event.type == QUIT:
 				return
+			# Register key handlers
+			if event.type == KEYDOWN and event.key == K_RIGHT:
+				my_ship.turn(-5)
+			if event.type == KEYDOWN and event.key == K_LEFT:
+				my_ship.turn(5)
+			if event.type == KEYDOWN and event.key == K_UP:
+				my_ship.move(True)
+			if event.type == KEYUP and event.key == K_UP:
+				my_ship.move(False)
+			if event.type == KEYUP and event.key == K_RIGHT:
+				my_ship.turn(0)
+			if event.type == KEYUP and event.key == K_LEFT:
+				my_ship.turn(0)
 		# Update everything
 		my_ship.update()
 		
