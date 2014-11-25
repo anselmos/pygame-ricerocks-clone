@@ -16,10 +16,7 @@ class ImageInfo:
         self.center = center
         self.size = size
         self.radius = radius
-        if lifespan:
-            self.lifespan = lifespan
-        else:
-            self.lifespan = float('inf')
+        self.lifespan = lifespan if lifespan else float('inf')
         self.animated = animated
 
     def get_center(self):
