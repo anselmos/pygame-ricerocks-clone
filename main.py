@@ -10,6 +10,7 @@ time = 0.5
 started = False
 
 # Image class that helps working with images
+# TODO: Check if it's needed!
 class ImageInfo:
     def __init__(self, center, size, radius = 0, lifespan = None, animated = False):
         self.center = center
@@ -78,7 +79,10 @@ class Ship:
 		self.thrust = False
 		self.angle = angle
 		self.angle_vel = 0
-		self.image = image[0]
+		self.images = image
+		self.image = self.images[0]
+		self.image_width = self.image.get_width()
+		self.image_height = self.image.get_height()
 		self.original = self.image
 		self.image_center = info.get_center()
 		self.image_size = info.get_size()
@@ -96,10 +100,10 @@ class Ship:
         
 	def move(self, thrust):
 		self.thrust = thrust
-        #if self.thrust:
-        #    ship_thrust_sound.play()
-        #else:
-        #    ship_thrust_sound.rewind()
+		if self.thrust:
+			ship_thrust_sound.play(-1)
+		else:
+			ship_thrust_sound.stop()
 			
 	def shoot(self):
 		pass
@@ -117,12 +121,13 @@ class Ship:
         #missle_group.add(a_missile)
         
 	def draw(self,screen):
+		if self.thrust:
+			self.original = self.images[1]
+		else:
+			self.original = self.images[0]
+		
 		screen.blit(self.image, self.pos)
-		pass
-        #if self.thrust:
-        #    canvas.draw_image(self.image, [self.image_center[0] + 90, self.image_center[1]] , self.image_size, self.pos, self.image_size, self.angle)
-        #else:
-        #    canvas.draw_image(self.image, self.image_center, self.image_size, self.pos, self.image_size, self.angle)
+
 	def update(self):
 		self.pos[0] += self.vel[0]
 		self.pos[1] += self.vel[1]
@@ -133,22 +138,23 @@ class Ship:
 		self.vel[1] *= (1 - c)
         
         # Screen wrapping
-           
-		if self.pos[1] <= self.radius or self.pos[1] >= HEIGHT:
-			self.pos[1] = self.pos[1] % HEIGHT
+		if self.pos[1] + self.image_height <= self.radius: #or self.pos[1] >= HEIGHT:
+			self.pos[1] = self.pos[1] % HEIGHT + self.image_height
+		if self.pos[1] >= HEIGHT:
+			self.pos[1] = self.pos[1] % HEIGHT - self.image_height
                   
-		if self.pos[0] <= 0 or self.pos[0] >= WIDTH:
-			self.pos[0] = self.pos[0] % WIDTH
-            
+		if self.pos[0] + self.image_width <= 0: # or self.pos[0] >= WIDTH:
+			self.pos[0] = self.pos[0] % WIDTH + self.image_width
+		if self.pos[0] >= WIDTH:
+			self.pos[0] = self.pos[0] % WIDTH - self.image_width
+
         # Thrusting forward      
 		forward = angle_to_vector(math.radians(self.angle))
 		if self.thrust:
 			self.vel[0] += forward[0] * 0.1
-			self.vel[1] += forward[1] * 0.1
-			print (math.radians(self.angle))
+			self.vel[1] += -forward[1] * 0.1
 		self.angle += self.angle_vel
 		self.image = rot_center(self.original, self.angle)
-		#self.rect = self.image.get_rect()
 def draw(screen):
 	global my_ship
 	screen.fill((0, 0, 0))
@@ -164,11 +170,14 @@ def main():
 	ship_info = ImageInfo([45, 45], [90, 90], 35)
 	ship_sheet = spritesheet.spritesheet('art/double_ship.png')
 	ship_images = ship_sheet.images_at(((0, 0, 90, 90),(90, 0, 90,90)), colorkey=(255, 255, 255))
-	#ship_images = load_image('double_ship2.png')
+
 	# Load the sounds
+	# Make em global first though
+	global ship_thrust_sound
 	soundtrack = load_sound('music.ogg')
 	missile_sound = load_sound('shoot.wav')
 	ship_thrust_sound = load_sound('thrust.wav')
+	ship_thrust_sound.set_volume(0.05)
 	explosion_sound = load_sound('explode.wav')
 	
 	# Init the ship and other objects
@@ -206,11 +215,9 @@ def main():
 		my_ship.update()
 		
 		# Draw everything
-		#screen.fill((0, 0, 0))
 		screen.blit(background, (0,0))
 		my_ship.draw(screen)
 		pygame.display.flip()
-		#draw(screen)
 print ("If you can see this, then PyGame was succesfully imported")
 
 
