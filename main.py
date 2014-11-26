@@ -103,19 +103,20 @@ class Ship:
 			ship_thrust_sound.stop()
 			
 	def shoot(self):
-		pass
-        #global missle_group       
-        #base_missle_speed = 6
-        #forward = angle_to_vector(self.angle)
-        #vel = [0, 0]
-        #vel[0] = self.vel[0] + forward[0] * base_missle_speed
-        #vel[1] = self.vel[1] + forward[1] * base_missle_speed
+		global missile_group       
+		base_missle_speed = 6
+		forward = angle_to_vector(math.radians(self.angle))
+		vel = [0, 0]
+		vel[0] = self.vel[0] + forward[0] * base_missle_speed
+		vel[1] = self.vel[1] + -forward[1] * base_missle_speed
 
-        #pos = [0, 0]
-        #pos[0] = self.pos[0] + (self.radius * forward[0])
-        #pos[1] = self.pos[1] + (self.radius * forward[1])
-        #a_missile = Sprite(pos, vel, 0, 0, missile_image, missile_info, missile_sound)
-        #missle_group.add(a_missile)
+		pos = [0, 0]
+		# TODO: think about why the radius has to be increased by this magic number
+		pos[0] = self.pos[0] + (self.radius + 5 + self.image_width / 2 * forward[0])
+		pos[1] = self.pos[1] + (self.radius + 5 + self.image_height / 2 * -forward[1])
+
+		a_missile = Sprite(pos, vel, 0, 0, missile_image, missile_info, missile_sound)
+		missile_group.add(a_missile)
         
 	def draw(self,screen):
 		if self.thrust:
@@ -154,7 +155,7 @@ class Ship:
 		self.image = rot_center(self.original, self.angle)
 		
 class Sprite:
-	def __init__(self, pos, vel, ang, ang_vel, image, info, sound = None):
+	def __init__(self, pos, vel, ang, ang_vel, image, info, sound=None):
 		self.pos = [pos[0],pos[1]]
 		self.vel = [vel[0],vel[1]]
 		self.angle = ang
@@ -179,13 +180,13 @@ class Sprite:
 	def get_radius(self):
 		return self.radius
     
-    #def collide(self, other_object):
-     #   distance = dist(self.pos, other_object.get_position())
-      #  
-       # if distance > self.radius + other_object.get_radius():
-        #    return False
-        #elif distance < self.radius + other_object.get_radius():
-         #   return True
+	def collide(self, other_object):
+		distance = dist(self.pos, other_object.get_position())
+
+		if distance > self.radius + other_object.get_radius():
+			return False
+		elif distance < self.radius + other_object.get_radius():
+			return True
    
 	def draw(self, screen):
 		screen.blit(self.image, self.pos)
@@ -271,10 +272,16 @@ def main():
 	asteroid_info = ImageInfo([45, 45], [90, 90], 40)
 	global asteroid_image
 	asteroid_image = load_image('asteroid_blue.png')
+	
+	global missile_info 
+	missile_info = ImageInfo([5,5], [10, 10], 3, 50)
+	global missile_image
+	missile_image = load_image('shot2.png')
+	
 
 	# Load the sounds
 	# Make em global first though
-	global ship_thrust_sound
+	global ship_thrust_sound, missile_sound
 	soundtrack = load_sound('music.ogg')
 	missile_sound = load_sound('shoot.wav')
 	ship_thrust_sound = load_sound('thrust.wav')
@@ -284,8 +291,9 @@ def main():
 	# Init the ship and other objects
 	global my_ship
 	my_ship = Ship([WIDTH / 2, HEIGHT / 2], [0, 0], 0, ship_images, ship_info)
-	global rock_group
+	global rock_group, missile_group
 	rock_group = set([])
+	missile_group = set([])
 	# Load the background
 	background = load_image('nebula_blue.f2014.png')
 
@@ -318,12 +326,15 @@ def main():
 				my_ship.turn(0)
 			if event.type == KEYUP and event.key == K_ESCAPE:
 				return
+			if event.type == KEYUP and event.key == K_SPACE:
+				my_ship.shoot()
 		# Update everything
 		my_ship.update()
 		
 		# Draw everything
 		screen.blit(background, (0,0))
 		my_ship.draw(screen)
+		process_sprite_group(missile_group, screen)
 		process_sprite_group(rock_group, screen)
 		pygame.display.flip()
 print ("If you can see this, then PyGame was succesfully imported")
