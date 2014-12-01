@@ -85,6 +85,7 @@ class Ship:
 		self.image_size = info.get_size()
 		self.radius = info.get_radius()
 		self.rect = self.image.get_rect()
+		self.center_pos = [(self.pos[0] + self.image_width / 2), (self.pos[1] + self.image_height / 2)]
         
 	def get_position(self):
 		return self.pos
@@ -129,7 +130,7 @@ class Ship:
 	def update(self):
 		self.pos[0] += self.vel[0]
 		self.pos[1] += self.vel[1]
-		
+		self.center_pos = [(self.pos[0] + self.image_width / 2), (self.pos[1] + self.image_height / 2)]
 		# Friction update
 		c = 0.015
 		self.vel[0] *= (1 - c)
@@ -169,6 +170,7 @@ class Sprite:
 		self.radius = info.get_radius()
 		self.lifespan = info.get_lifespan()
 		self.animated = info.get_animated()
+		self.center_pos = [(self.pos[0] + self.image_width / 2), (self.pos[1] + self.image_height / 2)]
 		self.age = 0
 		if sound:
 			sound.stop()
@@ -181,7 +183,7 @@ class Sprite:
 		return self.radius
     
 	def collide(self, other_object):
-		distance = dist(self.pos, other_object.get_position())
+		distance = dist(self.center_pos, other_object.center_pos)
 
 		if distance > self.radius + other_object.get_radius():
 			return False
@@ -201,7 +203,7 @@ class Sprite:
 		self.pos[0] += self.vel[0]
 		self.pos[1] += self.vel[1]
 		self.age += 1
-		
+		self.center_pos = [(self.pos[0] + self.image_width / 2), (self.pos[1] + self.image_height / 2)]
         # Screen wrapping
 		if self.pos[1] + self.image_height <= self.radius:
 			self.pos[1] = self.pos[1] % HEIGHT + self.image_height
@@ -220,7 +222,26 @@ class Sprite:
 			return False
 		else:
 			return True
-	
+
+def group_collide(group, other_object):
+	#global explosion_group
+	for elem in set(group):
+		if elem.collide(other_object):
+			#an_explosion = Sprite(elem.get_position(), [0,0], 0, 0, explosion_image, explosion_info, explosion_sound)
+			#explosion_group.add(an_explosion)
+			group.remove(elem)
+			return True
+	else:
+		return False
+
+def group_group_collide(group1, group2):
+	score_add = 0
+	for elem in set(group1):
+		if group_collide(group2, elem):
+			group1.remove(elem)
+			score_add += 1
+	return score_add
+			
 def process_sprite_group(group, screen):
 	for elem in set(group):
 		elem.draw(screen)
@@ -295,10 +316,10 @@ def main():
 	rock_group = set([])
 	missile_group = set([])
 	# Load the background
+	debris_info = ImageInfo([320, 240], [640, 480])
 	background = load_image('nebula_blue.f2014.png')
+	debris_image = load_image('debris2_blue.png')
 
-	pygame.display.flip()
-	
 	# Init game objects
 	clock = pygame.time.Clock()
 	pygame.time.set_timer(USEREVENT+1, 1000)
@@ -331,8 +352,21 @@ def main():
 		# Update everything
 		my_ship.update()
 		
+		# Check for collisions
+		global score, lives
+		if group_collide(rock_group, my_ship):
+			lives -= 1
+		score += group_group_collide(missile_group, rock_group)
+		
 		# Draw everything
+		# Draw and animate the background
+		global time
+		time += 1
+		wtime = (time / 4) % WIDTH
 		screen.blit(background, (0,0))
+		screen.blit(debris_image,((wtime - WIDTH / 2) - 320, (HEIGHT / 2) - 240))
+		screen.blit(debris_image,((wtime + WIDTH / 2) - 320, (HEIGHT / 2) - 240))
+		
 		my_ship.draw(screen)
 		process_sprite_group(missile_group, screen)
 		process_sprite_group(rock_group, screen)
