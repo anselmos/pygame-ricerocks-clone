@@ -289,6 +289,14 @@ def main():
 	ship_sheet = spritesheet.spritesheet('art/double_ship.png')
 	ship_images = ship_sheet.images_at(((0, 0, 90, 90),(90, 0, 90,90)), colorkey=(255, 255, 255))
 	
+	global explosion_info
+	explosion_info = ImageInfo([64, 64], [128, 128], 17, 24, True)
+	explosion_sheet = spritesheet.spritesheet('art/explosion_alpha.png')
+	global explosion_images
+	# TODO: load this shizz in a less shitty manner
+	explosion_images = explosion_sheet.images_at(((0, 0, 128, 128),(128, 0, 128, 128), (128*2, 0, 128, 128), (128*3, 0, 128, 128), (128*4, 0, 128, 128), (128*5, 0, 128, 128)
+		), (128*6, 0, 128, 128), (128*7, 0, 128, 128), (128*8, 0, 128, 128), (128*9, 0, 128, 128), (128*10, 0, 128, 128), (128*11, 0, 128, 128), (128*12, 0, 128, 128), (128*13, 0, 128, 128)), colorkey=(255,255,255))
+	
 	global asteroid_info
 	asteroid_info = ImageInfo([45, 45], [90, 90], 40)
 	global asteroid_image
@@ -367,6 +375,7 @@ def main():
 		screen.blit(debris_image,((wtime - WIDTH / 2) - 320, (HEIGHT / 2) - 240))
 		screen.blit(debris_image,((wtime + WIDTH / 2) - 320, (HEIGHT / 2) - 240))
 		
+		screen.blit(explosion_images[5], (WIDTH/2, HEIGHT/2))
 		my_ship.draw(screen)
 		process_sprite_group(missile_group, screen)
 		process_sprite_group(rock_group, screen)
