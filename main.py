@@ -182,6 +182,7 @@ class Sprite:
             
 	def get_position(self):
 		return self.pos
+		
     
 	def get_radius(self):
 		return self.radius
