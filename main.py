@@ -1,5 +1,6 @@
 import pygame, spritesheet, os.path, math, random
 from pygame.locals import *
+from SpriteStripAnim import SpriteStripAnim
 
 # globals for user interface
 WIDTH = 800
@@ -156,7 +157,7 @@ class Ship:
 		self.image = rot_center(self.original, self.angle)
 		
 class Sprite:
-	def __init__(self, pos, vel, ang, ang_vel, image, info, sound=None):
+	def __init__(self, pos, vel, ang, ang_vel, image, info, sound=None, strip=None):
 		self.pos = [pos[0],pos[1]]
 		self.vel = [vel[0],vel[1]]
 		self.angle = ang
@@ -172,12 +173,16 @@ class Sprite:
 		self.animated = info.get_animated()
 		self.center_pos = [(self.pos[0] + self.image_width / 2), (self.pos[1] + self.image_height / 2)]
 		self.age = 0
+		if strip:
+			self.strip = strip
+			self.strip.iter()
 		if sound:
 			sound.stop()
 			sound.play()
             
 	def get_position(self):
 		return self.pos
+		
     
 	def get_radius(self):
 		return self.radius
@@ -191,13 +196,11 @@ class Sprite:
 			return True
    
 	def draw(self, screen):
-		screen.blit(self.image, self.pos)
-		#pass
-    #    if self.animated:
-    #        explosion_index = self.age % 24
-    #        canvas.draw_image(self.image, [self.image_center[0] + explosion_index * self.image_size[0], self.image_center[1]], self.image_size, self.pos, self.image_size, self.angle)
-    #    else:
-    #        canvas.draw_image(self.image, self.image_center, self.image_size, self.pos, self.image_size, self.angle)
+		if self.animated:
+			self.image = self.strip.next()
+			screen.blit(self.image, self.pos)
+		else:
+			screen.blit(self.image, self.pos)
     
 	def update(self):
 		self.pos[0] += self.vel[0]
@@ -227,8 +230,8 @@ def group_collide(group, other_object):
 	#global explosion_group
 	for elem in set(group):
 		if elem.collide(other_object):
-			#an_explosion = Sprite(elem.get_position(), [0,0], 0, 0, explosion_image, explosion_info, explosion_sound)
-			#explosion_group.add(an_explosion)
+			an_explosion = Sprite(elem.get_position(), [0,0], 0, 0, explosion_image, explosion_info, explosion_sound, explosion_sheet)
+			explosion_group.add(an_explosion)
 			group.remove(elem)
 			return True
 	else:
@@ -289,6 +292,15 @@ def main():
 	ship_sheet = spritesheet.spritesheet('art/double_ship.png')
 	ship_images = ship_sheet.images_at(((0, 0, 90, 90),(90, 0, 90,90)), colorkey=(255, 255, 255))
 	
+	global explosion_info
+	explosion_info = ImageInfo([64, 64], [128, 128], 17, 24, True)
+	global explosion_image, explosion_sheet
+	explosion_sheet = SpriteStripAnim('art/explosion_alpha.png', (0,0,128,128), 24, (255,255,255), True, 2)
+	explosion_sheet.iter()
+	explosion_image = explosion_sheet.next()
+	# TODO: load this shizz in a less shitty manner
+	
+	
 	global asteroid_info
 	asteroid_info = ImageInfo([45, 45], [90, 90], 40)
 	global asteroid_image
@@ -302,17 +314,19 @@ def main():
 
 	# Load the sounds
 	# Make em global first though
-	global ship_thrust_sound, missile_sound
+	global ship_thrust_sound, missile_sound, explosion_sound
 	soundtrack = load_sound('music.ogg')
 	missile_sound = load_sound('shoot.wav')
 	ship_thrust_sound = load_sound('thrust.wav')
 	ship_thrust_sound.set_volume(0.05)
 	explosion_sound = load_sound('explode.wav')
+	explosion_sound.set_volume(0.05)
 	
 	# Init the ship and other objects
 	global my_ship
 	my_ship = Ship([WIDTH / 2, HEIGHT / 2], [0, 0], 0, ship_images, ship_info)
-	global rock_group, missile_group
+	global rock_group, missile_group, explosion_group
+	explosion_group = set([])
 	rock_group = set([])
 	missile_group = set([])
 	# Load the background
@@ -366,9 +380,10 @@ def main():
 		screen.blit(background, (0,0))
 		screen.blit(debris_image,((wtime - WIDTH / 2) - 320, (HEIGHT / 2) - 240))
 		screen.blit(debris_image,((wtime + WIDTH / 2) - 320, (HEIGHT / 2) - 240))
-		
+
 		my_ship.draw(screen)
 		process_sprite_group(missile_group, screen)
+		process_sprite_group(explosion_group, screen)
 		process_sprite_group(rock_group, screen)
 		pygame.display.flip()
 print ("If you can see this, then PyGame was succesfully imported")
