@@ -295,9 +295,9 @@ def click(pos):
 	inheight = (center[1] - size[1] / 2) < pos[1] < (center[1] + size[1] / 2)
 	lives = 3
 	score = 0
-	soundtrack.stop()
-	soundtrack.play()
 	if (not started) and inwidth and inheight:
+		soundtrack.stop()
+		soundtrack.play()
 		started = True
 		
 def main():
