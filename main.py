@@ -8,7 +8,7 @@ HEIGHT = 600
 score = 0
 lives = 3
 time = 0.5
-started = True
+started = False
 
 # Image class that helps working with images
 # TODO: Check if it's needed!
@@ -281,6 +281,25 @@ def rock_spawner():
 		if distance > 100:
 			rock_group.add(a_rock)
 			
+def restart():
+	global rock_group, started
+	started = False
+	for elem in set(rock_group):
+		rock_group.discard(elem)
+
+def click(pos):
+	global started, lives, score
+	center = [WIDTH / 2, HEIGHT / 2]
+	size = splash_info.get_size()
+	inwidth = (center[0] - size[0] / 2) < pos[0] < (center[0] + size[0] / 2)
+	inheight = (center[1] - size[1] / 2) < pos[1] < (center[1] + size[1] / 2)
+	lives = 3
+	score = 0
+	soundtrack.stop()
+	soundtrack.play()
+	if (not started) and inwidth and inheight:
+		started = True
+		
 def main():
 	# Init pygame
 	pygame.init()
@@ -298,8 +317,11 @@ def main():
 	explosion_sheet = SpriteStripAnim('art/explosion_alpha.png', (0,0,128,128), 24, (255,255,255), True, 2)
 	explosion_sheet.iter()
 	explosion_image = explosion_sheet.next()
-	# TODO: load this shizz in a less shitty manner
 	
+	global splash_info
+	splash_info = ImageInfo([200, 150], [400, 300])
+	global splash_image
+	splash_image = load_image('splash.png')
 	
 	global asteroid_info
 	asteroid_info = ImageInfo([45, 45], [90, 90], 40)
@@ -314,8 +336,9 @@ def main():
 
 	# Load the sounds
 	# Make em global first though
-	global ship_thrust_sound, missile_sound, explosion_sound
+	global ship_thrust_sound, missile_sound, explosion_sound, soundtrack
 	soundtrack = load_sound('music.ogg')
+	soundtrack.set_volume(0.5)
 	missile_sound = load_sound('shoot.wav')
 	ship_thrust_sound = load_sound('thrust.wav')
 	ship_thrust_sound.set_volume(0.05)
@@ -333,7 +356,11 @@ def main():
 	debris_info = ImageInfo([320, 240], [640, 480])
 	background = load_image('nebula_blue.f2014.png')
 	debris_image = load_image('debris2_blue.png')
-
+	
+	# Init the font object and colours, using default pygame font
+	fontObj = pygame.font.Font(None, 50)
+	white_color = pygame.Color(255, 255, 255)
+	
 	# Init game objects
 	clock = pygame.time.Clock()
 	pygame.time.set_timer(USEREVENT+1, 1000)
@@ -363,6 +390,8 @@ def main():
 				return
 			if event.type == KEYUP and event.key == K_SPACE:
 				my_ship.shoot()
+			if event.type == pygame.MOUSEBUTTONUP:
+				click(pygame.mouse.get_pos())
 		# Update everything
 		my_ship.update()
 		
@@ -385,7 +414,17 @@ def main():
 		process_sprite_group(missile_group, screen)
 		process_sprite_group(explosion_group, screen)
 		process_sprite_group(rock_group, screen)
+		
+		# Draw the score and lives at the outermost layer
+		screen.blit(fontObj.render("Score: %d"%score, True, white_color), (0, 0))
+		screen.blit(fontObj.render("Lives: %d"%lives, True, white_color), (620, 0))
+		# Draw the splash screen if the game is not running
+		if not started:
+			screen.blit(splash_image, (WIDTH/2 - (splash_info.get_size()[0] / 2), HEIGHT/2 - (splash_info.get_size()[1] / 2)))
+
 		pygame.display.flip()
+		if lives == 0:
+			restart()
 print ("If you can see this, then PyGame was succesfully imported")
 
 
